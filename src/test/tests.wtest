@@ -1,0 +1,97 @@
+import src.legajo.*
+import src.materia.*
+import src.carrera.*
+import src.carreraEnProceso.*
+import src.estudiante.*
+
+describe "condiciones de inscripcion" {
+
+
+    const elementos       = new Materia(nombre = "Elementos de Programación", correlativas = [], cupo = 30)
+    const matematica      = new Materia(nombre = "Matemática 1",              correlativas = [], cupo = 30)
+    const objetos1        = new Materia(nombre = "Objetos 1",                 correlativas = [], cupo = 30)
+    const baseDeDatos     = new Materia(nombre = "Bases de Datos",            correlativas = [], cupo = 30)
+    const quimica         = new Materia(nombre = "Química",                   correlativas = [], cupo = 30)
+    const biologia1       = new Materia(nombre = "Biología 1",                correlativas = [], cupo = 30)
+    const objetos2        = new Materia(nombre = "Objetos 2",                correlativas = [objetos1, matematica],   cupo = 30)
+    const objetos3        = new Materia(nombre = "Objetos 3",                correlativas = [objetos2, baseDeDatos],  cupo = 30)
+    const progConcurrente = new Materia(nombre = "Programación Concurrente", correlativas = [objetos1, baseDeDatos],  cupo = 30)
+    const biologia2       = new Materia(nombre = "Biología 2",               correlativas = [biologia1],              cupo = 30)
+    const carreraProg     = new Carrera(nombre = "Programación", listadoDeMaterias = [elementos, matematica, objetos1, baseDeDatos, objetos2, objetos3, progConcurrente])
+    const carreraMed      = new Carrera(nombre = "Medicina",     listadoDeMaterias = [quimica, biologia1, biologia2])
+    const roque           = new Legajo(
+        estudiante        = new Estudiante(nombre = "Roque"),
+        carrerasEnProceso = [
+            new CarreraEnProceso(
+                carrera           = carreraProg,
+                materiasAprobadas = [
+                    new MateriaConNota(materia = elementos,   nota = 8),
+                    new MateriaConNota(materia = matematica,  nota = 7),
+                    new MateriaConNota(materia = objetos1,    nota = 9),
+                    new MateriaConNota(materia = baseDeDatos, nota = 7)
+                ]
+            ),
+            new CarreraEnProceso(
+                carrera           = carreraMed,
+                materiasAprobadas = [
+                    new MateriaConNota(materia = quimica,   nota = 8),
+                    new MateriaConNota(materia = biologia1, nota = 7)
+                ]
+            )
+        ]
+    )
+
+    test "Roque puede inscribirse en Objetos 2" {
+        assert.that(roque.puedeInscribirse(objetos2))
+    }
+
+    test "Roque no puede inscribirse en Objetos 3 porque le falta Objetos 2" {
+        assert.notThat(roque.puedeInscribirse(objetos3))
+    }
+
+    test "Roque no puede inscribirse en Objetos 1 porque ya la tiene aprobada" {
+        assert.notThat(roque.puedeInscribirse(objetos1))
+    }
+
+    test "Roque puede inscribirse en Objetos 2 y Programacion Concurrente en Programacion" {
+        assert.that(roque.puedeInscribirse(objetos2))
+        assert.that(roque.puedeInscribirse(progConcurrente))
+    }
+
+    test "Roque puede inscribirse en Biologia 2 en Medicina" {
+        assert.that(roque.puedeInscribirse(biologia2))
+    }
+}
+
+describe "cupo y lista de espera" {
+
+    test "cupo lleno y baja libera lugar al primero en espera" {
+        const elementos  = new Materia(nombre = "Elementos de Programación", correlativas = [], cupo = 30)
+        const matematica = new Materia(nombre = "Matemática 1",              correlativas = [], cupo = 30)
+        const objetos1   = new Materia(nombre = "Objetos 1",                 correlativas = [], cupo = 30)
+        const obj2       = new Materia(nombre = "Objetos 2", correlativas = [objetos1, matematica], cupo = 3)
+        const carrera    = new Carrera(nombre = "Programación", listadoDeMaterias = [elementos, matematica, objetos1, obj2])
+        const aprobadas  = [new MateriaConNota(materia = elementos, nota = 7), new MateriaConNota(materia = objetos1, nota = 8), new MateriaConNota(materia = matematica, nota = 7)]
+        const luisa  = new Legajo(estudiante = new Estudiante(nombre = "Luisa"),  carrerasEnProceso = [new CarreraEnProceso(carrera = carrera, materiasAprobadas = aprobadas)])
+        const romina = new Legajo(estudiante = new Estudiante(nombre = "Romina"), carrerasEnProceso = [new CarreraEnProceso(carrera = carrera, materiasAprobadas = aprobadas)])
+        const alicia = new Legajo(estudiante = new Estudiante(nombre = "Alicia"), carrerasEnProceso = [new CarreraEnProceso(carrera = carrera, materiasAprobadas = aprobadas)])
+        const roque  = new Legajo(estudiante = new Estudiante(nombre = "Roque"),  carrerasEnProceso = [new CarreraEnProceso(carrera = carrera, materiasAprobadas = aprobadas)])
+
+        obj2.inscribir(luisa)
+        obj2.inscribir(romina)
+        obj2.inscribir(alicia)
+        obj2.inscribir(roque)
+
+        assert.that(obj2.inscriptos().contains(luisa))
+        assert.that(obj2.inscriptos().contains(romina))
+        assert.that(obj2.inscriptos().contains(alicia))
+        assert.notThat(obj2.inscriptos().contains(roque))
+        assert.that(obj2.listaDeEspera().contains(roque))
+
+        obj2.darDeBaja(romina)
+
+        assert.that(obj2.inscriptos().contains(roque))
+        assert.notThat(obj2.listaDeEspera().contains(roque))
+        assert.notThat(obj2.inscriptos().contains(romina))
+    }
+}
