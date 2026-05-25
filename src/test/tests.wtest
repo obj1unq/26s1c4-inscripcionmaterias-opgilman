@@ -6,6 +6,7 @@ import src.estudiante.*
 
 describe "condiciones de inscripcion" {
 
+
     const elementos       = new Materia(nombre = "Elementos de Programación", correlativas = [], cupo = 30)
     const matematica      = new Materia(nombre = "Matemática 1",              correlativas = [], cupo = 30)
     const objetos1        = new Materia(nombre = "Objetos 1",                 correlativas = [], cupo = 30)
